@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>JRS Cloud - Admin Panel</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Hind+Siliguri:wght@400;600;700&display=swap');
+    body {
+      font-family: 'Inter', 'Hind Siliguri', sans-serif;
+      background: #0f172a;
+      color: #e2e8f0;
+      min-height: 100vh;
+    }
+    .glass-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(10px); }
+    .admin-only { display: none; }
+  </style>
+</head>
+<body class="p-4 sm:p-8">
+
+  <div id="auth-section" class="max-w-md mx-auto mt-20 text-center">
+    <h1 class="text-3xl font-bold mb-6">JRS Admin Login</h1>
+    <button id="btn-admin-login" class="bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-3 rounded-xl font-bold w-full transition-all">
+      Login as Admin
+    </button>
+    <p id="error-msg" class="text-red-400 mt-4 hidden"></p>
+  </div>
+
+  <div id="admin-dashboard" class="admin-only max-w-6xl mx-auto">
+    <header class="flex justify-between items-center mb-8 border-b border-white/10 pb-5">
+      <div>
+        <h1 class="text-2xl font-bold text-white">অ্যাডমিন কন্ট্রোল প্যানেল</h1>
+        <p class="text-slate-400 text-sm">সব ইউজার ও তাদের ডেটা এখান থেকে পরিচালনা করুন</p>
+      </div>
+      <button id="btn-logout" class="bg-red-500/20 text-red-400 border border-red-500/30 px-4 py-2 rounded-lg text-sm hover:bg-red-500/30">Logout</button>
+    </header>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+      <div class="glass-card p-6 rounded-2xl">
+        <p class="text-slate-400 text-sm uppercase">মোট ইউজার</p>
+        <h2 id="total-users" class="text-4xl font-bold mt-2">0</h2>
+      </div>
+      <div class="glass-card p-6 rounded-2xl">
+        <p class="text-slate-400 text-sm uppercase">মোট কন্টাক্ট</p>
+        <h2 id="total-contacts" class="text-4xl font-bold mt-2">0</h2>
+      </div>
+    </div>
+
+    <div class="glass-card rounded-2xl overflow-hidden">
+      <table class="w-full text-left">
+        <thead class="bg-white/5 text-slate-300 text-sm">
+          <tr>
+            <th class="p-4">ইউজার ইমেইল</th>
+            <th class="p-4">ইউজার আইডি</th>
+            <th class="p-4 text-center">অ্যাকশন</th>
+          </tr>
+        </thead>
+        <tbody id="user-table-body">
+          </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div id="data-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
+    <div class="bg-[#1e293b] w-full max-w-3xl rounded-2xl p-6 max-h-[80vh] overflow-y-auto">
+      <div class="flex justify-between items-center mb-6">
+        <h3 class="text-xl font-bold" id="modal-user-title">ইউজার কন্টাক্ট লিস্ট</h3>
+        <button onclick="closeModal()" class="text-slate-400 hover:text-white">✕</button>
+      </div>
+      <div id="modal-content" class="space-y-3">
+        </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-app.js";
+    import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-auth.js";
+    import { getFirestore, collection, getDocs, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyDbWY8lrAmw0-Ao43SGuFqLt6ulP1Vxr1U",
+      authDomain: "jrs-cloud-476ef.firebaseapp.com",
+      projectId: "jrs-cloud-476ef",
+      storageBucket: "jrs-cloud-476ef.firebasestorage.app",
+      messagingSenderId: "322592273401",
+      appId: "1:322592273401:web:5661912525d04281380328",
+      measurementId: "G-SGNXLEHEWD"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+    const provider = new GoogleAuthProvider();
+    const ADMIN_UID = "8vHgoNEx7AWuKqk6TbuBbvXmiTb2";
+
+    const authSection = document.getElementById('auth-section');
+    const adminDashboard = document.getElementById('admin-dashboard');
+    const userTableBody = document.getElementById('user-table-body');
+
+    // Login
+    document.getElementById('btn-admin-login').onclick = () => {
+      signInWithPopup(auth, provider).catch(err => console.error(err));
+    };
+
+    // Logout
+    document.getElementById('btn-logout').onclick = () => signOut(auth);
+
+    onAuthStateChanged(auth, (user) => {
+      if (user && user.uid === ADMIN_UID) {
+        authSection.classList.add('hidden');
+        adminDashboard.classList.remove('admin-only');
+        loadAllUsers();
+      } else if (user) {
+        document.getElementById('error-msg').innerText = "❌ আপনি অ্যাডমিন নন! আপনার অ্যাক্সেস নেই।";
+        document.getElementById('error-msg').classList.remove('hidden');
+        signOut(auth);
+      } else {
+        authSection.classList.remove('hidden');
+        adminDashboard.classList.add('admin-only');
+      }
+    });
+
+    async function loadAllUsers() {
+      const usersSnap = await getDocs(collection(db, "users"));
+      userTableBody.innerHTML = "";
+      document.getElementById('total-users').innerText = usersSnap.size;
+      
+      let totalContactsCount = 0;
+
+      usersSnap.forEach(async (userDoc) => {
+        const userData = userDoc.data();
+        const userId = userDoc.id;
+        
+        // Fetch contacts count for each user
+        const contactsSnap = await getDocs(collection(db, "users", userId, "contacts"));
+        totalContactsCount += contactsSnap.size;
+        document.getElementById('total-contacts').innerText = totalContactsCount;
+
+        const row = `
+          <tr class="border-t border-white/5 hover:bg-white/5 transition-all">
+            <td class="p-4 text-sm">${userData.email || 'N/A'}</td>
+            <td class="p-4 text-xs font-mono text-slate-500">${userId}</td>
+            <td class="p-4 text-center">
+              <button onclick="viewUserContacts('${userId}', '${userData.email}')" class="bg-indigo-500/20 text-indigo-300 px-3 py-1 rounded-md text-xs hover:bg-indigo-500/40">View Data</button>
+            </td>
+          </tr>
+        `;
+        userTableBody.innerHTML += row;
+      });
+    }
+
+    window.viewUserContacts = async (userId, email) => {
+      const modal = document.getElementById('data-modal');
+      const content = document.getElementById('modal-content');
+      document.getElementById('modal-user-title').innerText = `Data for: ${email}`;
+      
+      modal.classList.remove('hidden');
+      content.innerHTML = "<p class='text-center text-slate-400'>Loading...</p>";
+
+      const contactsSnap = await getDocs(collection(db, "users", userId, "contacts"));
+      if (contactsSnap.empty) {
+        content.innerHTML = "<p class='text-center text-red-400 py-10'>এই ইউজারের কোনো কন্টাক্ট নেই।</p>";
+        return;
+      }
+
+      content.innerHTML = "";
+      contactsSnap.forEach(docSnap => {
+        const data = docSnap.data();
+        content.innerHTML += `
+          <div class="bg-white/5 p-4 rounded-xl border border-white/10 flex justify-between items-center">
+            <div>
+              <p class="font-bold text-indigo-300">${data.name}</p>
+              <p class="text-sm text-slate-400">📞 ${data.phone} | ${data.category || 'No Category'}</p>
+            </div>
+          </div>
+        `;
+      });
+    };
+
+    window.closeModal = () => document.getElementById('data-modal').classList.add('hidden');
+
+  </script>
+</body>
+</html>
