@@ -2,81 +2,44 @@
 <html lang="bn">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>JRS Cloud - Admin Panel</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
+  <title>JRS Cloud • অ্যাডমিন প্যানেল</title>
+  <meta name="description" content="JRS Cloud অ্যাডমিন প্যানেল — ইউজার ব্যবস্থাপনা, কন্টাক্ট মনিটরিং, ব্যান/আনব্যান ও ইম্পারসোনেশন।">
+  <meta name="theme-color" content="#0f172a">
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Hind+Siliguri:wght@400;600;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&family=Hind+Siliguri:wght@400;500;600;700&display=swap');
+    * { box-sizing: border-box; }
     body {
-      font-family: 'Inter', 'Hind Siliguri', sans-serif;
-      background: #0f172a;
-      color: #e2e8f0;
+      font-family: 'Inter', 'Hind Siliguri', system-ui, sans-serif;
+      background: radial-gradient(ellipse at 20% 20%, #1e293b 0%, #0f172a 70%, #020617 100%);
+      background-attachment: fixed;
       min-height: 100vh;
+      color: #f1f5f9;
+      -webkit-tap-highlight-color: transparent;
     }
-    .glass-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(10px); }
-    .admin-only { display: none; }
+    .glass { background: rgba(255,255,255,0.06); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); border: 1px solid rgba(255,255,255,0.12); }
+    .glass-card { background: rgba(255,255,255,0.04); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); border: 1px solid rgba(255,255,255,0.08); }
+    .glass-input { background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.15); color: #f1f5f9; }
+    .btn-glass { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #f8fafc; font-weight: 600; transition: all 0.2s; cursor: pointer; }
+    .btn-glass:hover { background: rgba(255,255,255,0.2); border-color: rgba(255,255,255,0.4); transform: translateY(-1px); box-shadow: 0 8px 20px -8px rgba(0,0,0,0.6); }
+    .btn-glass:active { transform: scale(0.97); }
+    .tag { display: inline-block; background: rgba(99,102,241,0.2); border: 1px solid rgba(129,140,248,0.4); border-radius: 999px; padding: 0.1rem 0.7rem; font-size: 0.65rem; color: #c7d2fe; }
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(6px); display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 1rem; }
+    .animate-slide-up { animation: slideUp 0.35s ease-out; }
+    @keyframes slideUp { from { transform: translateY(30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
   </style>
 </head>
-<body class="p-4 sm:p-8">
+<body class="antialiased">
 
-  <div id="auth-section" class="max-w-md mx-auto mt-20 text-center">
-    <h1 class="text-3xl font-bold mb-6">JRS Admin Login</h1>
-    <button id="btn-admin-login" class="bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-3 rounded-xl font-bold w-full transition-all">
-      Login as Admin
-    </button>
-    <p id="error-msg" class="text-red-400 mt-4 hidden"></p>
-  </div>
+  <!-- Main Container -->
+  <div id="app" class="min-h-screen flex flex-col"></div>
 
-  <div id="admin-dashboard" class="admin-only max-w-6xl mx-auto">
-    <header class="flex justify-between items-center mb-8 border-b border-white/10 pb-5">
-      <div>
-        <h1 class="text-2xl font-bold text-white">অ্যাডমিন কন্ট্রোল প্যানেল</h1>
-        <p class="text-slate-400 text-sm">সব ইউজার ও তাদের ডেটা এখান থেকে পরিচালনা করুন</p>
-      </div>
-      <button id="btn-logout" class="bg-red-500/20 text-red-400 border border-red-500/30 px-4 py-2 rounded-lg text-sm hover:bg-red-500/30">Logout</button>
-    </header>
-
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-      <div class="glass-card p-6 rounded-2xl">
-        <p class="text-slate-400 text-sm uppercase">মোট ইউজার</p>
-        <h2 id="total-users" class="text-4xl font-bold mt-2">0</h2>
-      </div>
-      <div class="glass-card p-6 rounded-2xl">
-        <p class="text-slate-400 text-sm uppercase">মোট কন্টাক্ট</p>
-        <h2 id="total-contacts" class="text-4xl font-bold mt-2">0</h2>
-      </div>
-    </div>
-
-    <div class="glass-card rounded-2xl overflow-hidden">
-      <table class="w-full text-left">
-        <thead class="bg-white/5 text-slate-300 text-sm">
-          <tr>
-            <th class="p-4">ইউজার ইমেইল</th>
-            <th class="p-4">ইউজার আইডি</th>
-            <th class="p-4 text-center">অ্যাকশন</th>
-          </tr>
-        </thead>
-        <tbody id="user-table-body">
-          </tbody>
-      </table>
-    </div>
-  </div>
-
-  <div id="data-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
-    <div class="bg-[#1e293b] w-full max-w-3xl rounded-2xl p-6 max-h-[80vh] overflow-y-auto">
-      <div class="flex justify-between items-center mb-6">
-        <h3 class="text-xl font-bold" id="modal-user-title">ইউজার কন্টাক্ট লিস্ট</h3>
-        <button onclick="closeModal()" class="text-slate-400 hover:text-white">✕</button>
-      </div>
-      <div id="modal-content" class="space-y-3">
-        </div>
-    </div>
-  </div>
-
+  <!-- Firebase SDK -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-app.js";
     import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-auth.js";
-    import { getFirestore, collection, getDocs, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js";
+    import { getFirestore, collection, getDocs, doc, updateDoc, deleteDoc, query, orderBy, serverTimestamp, onSnapshot, writeBatch } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyDbWY8lrAmw0-Ao43SGuFqLt6ulP1Vxr1U",
@@ -91,95 +54,299 @@
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getFirestore(app);
-    const provider = new GoogleAuthProvider();
+    window.db = db; window.auth = auth;
+    window.Fb = { signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut, collection, getDocs, doc, updateDoc, deleteDoc, query, orderBy, serverTimestamp, onSnapshot, writeBatch };
+  </script>
+
+  <script type="module">
+    const { signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut, collection, getDocs, doc, updateDoc, deleteDoc, query, orderBy, serverTimestamp, onSnapshot, writeBatch } = window.Fb;
+    const db = window.db, auth = window.auth;
+    const googleProvider = new GoogleAuthProvider();
     const ADMIN_UID = "8vHgoNEx7AWuKqk6TbuBbvXmiTb2";
 
-    const authSection = document.getElementById('auth-section');
-    const adminDashboard = document.getElementById('admin-dashboard');
-    const userTableBody = document.getElementById('user-table-body');
+    const $ = (sel) => document.querySelector(sel);
+    const $$ = (sel) => document.querySelectorAll(sel);
 
-    // Login
-    document.getElementById('btn-admin-login').onclick = () => {
-      signInWithPopup(auth, provider).catch(err => console.error(err));
+    const AppState = {
+      user: null,
+      allUsers: [],
+      currentViewUserId: null,
+      currentViewUserEmail: ''
     };
 
-    // Logout
-    document.getElementById('btn-logout').onclick = () => signOut(auth);
-
-    onAuthStateChanged(auth, (user) => {
-      if (user && user.uid === ADMIN_UID) {
-        authSection.classList.add('hidden');
-        adminDashboard.classList.remove('admin-only');
-        loadAllUsers();
-      } else if (user) {
-        document.getElementById('error-msg').innerText = "❌ আপনি অ্যাডমিন নন! আপনার অ্যাক্সেস নেই।";
-        document.getElementById('error-msg').classList.remove('hidden');
-        signOut(auth);
+    function renderApp() {
+      const appEl = $('#app');
+      if (!AppState.user) {
+        appEl.innerHTML = LoginUI();
+        attachLoginListeners();
       } else {
-        authSection.classList.remove('hidden');
-        adminDashboard.classList.add('admin-only');
+        appEl.innerHTML = DashboardUI();
+        attachDashboardListeners();
+        loadDashboardData();
       }
-    });
+    }
 
-    async function loadAllUsers() {
-      const usersSnap = await getDocs(collection(db, "users"));
-      userTableBody.innerHTML = "";
-      document.getElementById('total-users').innerText = usersSnap.size;
-      
-      let totalContactsCount = 0;
+    // ========== LOGIN UI ==========
+    function LoginUI() {
+      return `
+        <div class="flex items-center justify-center min-h-screen p-4">
+          <div class="glass w-full max-w-md p-8 rounded-3xl text-center space-y-6 animate-slide-up">
+            <div class="text-5xl">🛡️</div>
+            <h1 class="text-3xl font-bold bg-gradient-to-r from-indigo-300 to-purple-300 bg-clip-text text-transparent">JRS Cloud</h1>
+            <p class="text-slate-400 text-sm">অ্যাডমিন কন্ট্রোল প্যানেল</p>
+            <button id="btn-admin-login" class="btn-glass w-full py-3 rounded-xl bg-indigo-600/40 border-indigo-400/50 hover:bg-indigo-600/60 flex items-center justify-center gap-2">
+              <svg class="w-5 h-5" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+              Google দিয়ে সাইন-ইন
+            </button>
+            <p id="auth-error" class="text-red-400 text-sm hidden"></p>
+            <p class="text-[10px] text-slate-600">শুধু অনুমোদিত অ্যাডমিন ঢুকতে পারবেন</p>
+          </div>
+        </div>`;
+    }
 
-      usersSnap.forEach(async (userDoc) => {
-        const userData = userDoc.data();
-        const userId = userDoc.id;
-        
-        // Fetch contacts count for each user
-        const contactsSnap = await getDocs(collection(db, "users", userId, "contacts"));
-        totalContactsCount += contactsSnap.size;
-        document.getElementById('total-contacts').innerText = totalContactsCount;
-
-        const row = `
-          <tr class="border-t border-white/5 hover:bg-white/5 transition-all">
-            <td class="p-4 text-sm">${userData.email || 'N/A'}</td>
-            <td class="p-4 text-xs font-mono text-slate-500">${userId}</td>
-            <td class="p-4 text-center">
-              <button onclick="viewUserContacts('${userId}', '${userData.email}')" class="bg-indigo-500/20 text-indigo-300 px-3 py-1 rounded-md text-xs hover:bg-indigo-500/40">View Data</button>
-            </td>
-          </tr>
-        `;
-        userTableBody.innerHTML += row;
+    function attachLoginListeners() {
+      $('#btn-admin-login')?.addEventListener('click', async () => {
+        try {
+          await signInWithPopup(auth, googleProvider);
+        } catch (e) {
+          if (e.code !== 'auth/popup-closed-by-user') {
+            const errEl = $('#auth-error');
+            errEl.textContent = 'সাইন-ইন ব্যর্থ হয়েছে। আবার চেষ্টা করুন।';
+            errEl.classList.remove('hidden');
+          }
+        }
       });
     }
 
-    window.viewUserContacts = async (userId, email) => {
-      const modal = document.getElementById('data-modal');
-      const content = document.getElementById('modal-content');
-      document.getElementById('modal-user-title').innerText = `Data for: ${email}`;
-      
-      modal.classList.remove('hidden');
-      content.innerHTML = "<p class='text-center text-slate-400'>Loading...</p>";
+    // ========== DASHBOARD UI ==========
+    function DashboardUI() {
+      return `
+        <div class="flex flex-col min-h-screen pb-20 md:pb-8 animate-slide-up">
+          <header class="glass mx-3 mt-3 px-5 py-3 flex items-center justify-between rounded-2xl">
+            <div class="flex items-center gap-2">
+              <span class="text-2xl">☁️</span>
+              <h1 class="text-lg sm:text-xl font-bold text-white">JRS অ্যাডমিন</h1>
+            </div>
+            <button id="btn-logout" class="btn-glass text-xs py-2 px-4 border-red-400/30 hover:bg-red-500/20">লগআউট</button>
+          </header>
 
-      const contactsSnap = await getDocs(collection(db, "users", userId, "contacts"));
-      if (contactsSnap.empty) {
-        content.innerHTML = "<p class='text-center text-red-400 py-10'>এই ইউজারের কোনো কন্টাক্ট নেই।</p>";
-        return;
-      }
-
-      content.innerHTML = "";
-      contactsSnap.forEach(docSnap => {
-        const data = docSnap.data();
-        content.innerHTML += `
-          <div class="bg-white/5 p-4 rounded-xl border border-white/10 flex justify-between items-center">
-            <div>
-              <p class="font-bold text-indigo-300">${data.name}</p>
-              <p class="text-sm text-slate-400">📞 ${data.phone} | ${data.category || 'No Category'}</p>
+          <!-- Stats Cards -->
+          <div class="px-3 mt-3 grid grid-cols-2 md:grid-cols-3 gap-3">
+            <div class="glass-card p-4 rounded-2xl text-center">
+              <p class="text-2xl font-bold" id="stat-users">0</p>
+              <p class="text-[10px] text-slate-400">মোট ইউজার</p>
+            </div>
+            <div class="glass-card p-4 rounded-2xl text-center">
+              <p class="text-2xl font-bold" id="stat-contacts">0</p>
+              <p class="text-[10px] text-slate-400">মোট কন্টাক্ট</p>
+            </div>
+            <div class="glass-card p-4 rounded-2xl text-center col-span-2 md:col-span-1">
+              <p class="text-2xl font-bold" id="stat-active">0</p>
+              <p class="text-[10px] text-slate-400">সক্রিয় ইউজার</p>
             </div>
           </div>
-        `;
+
+          <!-- User Table -->
+          <div class="px-3 mt-4 flex-1">
+            <div class="glass-card rounded-2xl overflow-hidden">
+              <div class="overflow-x-auto">
+                <table class="w-full text-left text-sm">
+                  <thead class="bg-white/5 text-slate-300 text-xs uppercase tracking-wider">
+                    <tr>
+                      <th class="p-4">ইমেইল</th>
+                      <th class="p-4 hidden sm:table-cell">UID</th>
+                      <th class="p-4 text-center">স্ট্যাটাস</th>
+                      <th class="p-4 text-center">কন্টাক্ট</th>
+                      <th class="p-4 text-center">অ্যাকশন</th>
+                    </tr>
+                  </thead>
+                  <tbody id="user-table-body"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <div class="text-center py-3 text-xs text-slate-600">
+            Developed by <a href="https://jakariya41jr.xyz" target="_blank" class="text-indigo-400 hover:underline">Md Jakariya Hasan</a>
+          </div>
+        </div>
+
+        <!-- User Contacts Modal -->
+        <div id="contacts-modal" class="modal-overlay hidden">
+          <div class="glass w-full max-w-2xl mx-2 p-5 rounded-3xl max-h-[85vh] overflow-y-auto animate-slide-up">
+            <div class="flex justify-between items-center mb-4">
+              <h2 class="text-lg font-bold" id="contacts-modal-title">কন্টাক্ট লিস্ট</h2>
+              <button id="btn-close-contacts-modal" class="text-slate-400 hover:text-white text-xl">✕</button>
+            </div>
+            <div id="contacts-modal-content" class="space-y-2"></div>
+          </div>
+        </div>
+
+        <!-- Impersonation notice -->
+        <div id="impersonation-banner" class="hidden fixed top-0 left-0 w-full bg-purple-600/90 text-white text-center py-2 text-sm font-semibold z-50">
+          ⚡ আপনি এখন <span id="impersonation-email"></span> হিসেবে লগইন আছেন — <button id="btn-exit-impersonation" class="underline">বেরিয়ে আসুন</button>
+        </div>
+      `;
+    }
+
+    function attachDashboardListeners() {
+      $('#btn-logout')?.addEventListener('click', () => signOut(auth));
+      $('#btn-close-contacts-modal')?.addEventListener('click', () => {
+        $('#contacts-modal').classList.add('hidden');
       });
-    };
+    }
 
-    window.closeModal = () => document.getElementById('data-modal').classList.add('hidden');
+    // ========== DATA LOADING & RENDERING ==========
+    async function loadDashboardData() {
+      const usersSnap = await getDocs(collection(db, 'users'));
+      const users = [];
+      let totalContacts = 0;
+      let activeUsers = 0;
 
+      for (const userDoc of usersSnap.docs) {
+        const userData = userDoc.data();
+        const contactsSnap = await getDocs(collection(db, 'users', userDoc.id, 'contacts'));
+        const contactCount = contactsSnap.size;
+        totalContacts += contactCount;
+        if (!userData.banned) activeUsers++;
+
+        users.push({
+          id: userDoc.id,
+          email: userData.email || 'N/A',
+          banned: userData.banned || false,
+          contactCount
+        });
+      }
+
+      AppState.allUsers = users;
+
+      // Update stats
+      $('#stat-users').textContent = users.length;
+      $('#stat-contacts').textContent = totalContacts;
+      $('#stat-active').textContent = activeUsers;
+
+      // Render table
+      const tbody = $('#user-table-body');
+      tbody.innerHTML = users.map(u => `
+        <tr class="border-t border-white/5 hover:bg-white/5 transition-all">
+          <td class="p-4 text-sm">${escapeHtml(u.email)}</td>
+          <td class="p-4 text-xs font-mono text-slate-500 hidden sm:table-cell">${u.id}</td>
+          <td class="p-4 text-center">
+            <span class="text-xs px-2 py-0.5 rounded-full ${u.banned ? 'bg-red-500/20 text-red-400' : 'bg-green-500/20 text-green-400'}">
+              ${u.banned ? 'ব্যান' : 'সক্রিয়'}
+            </span>
+          </td>
+          <td class="p-4 text-center font-bold">${u.contactCount}</td>
+          <td class="p-4 text-center">
+            <div class="flex flex-wrap gap-1 justify-center">
+              <button data-uid="${u.id}" data-email="${escapeHtml(u.email)}" class="btn-view-contacts btn-glass text-xs px-2 py-1">👁️</button>
+              <button data-uid="${u.id}" data-email="${escapeHtml(u.email)}" class="btn-impersonate btn-glass text-xs px-2 py-1 bg-purple-500/20 border-purple-400/40">👻</button>
+              <button data-uid="${u.id}" class="btn-toggle-ban btn-glass text-xs px-2 py-1 ${u.banned ? 'bg-emerald-500/20 border-emerald-400/40' : 'bg-red-500/20 border-red-400/40'}">
+                ${u.banned ? '✅' : '⛔'}
+              </button>
+              <button data-uid="${u.id}" class="btn-delete-user btn-glass text-xs px-2 py-1 bg-red-700/20 border-red-500/40">🗑️</button>
+            </div>
+          </td>
+        </tr>
+      `).join('');
+
+      // Attach row actions
+      tbody.querySelectorAll('.btn-view-contacts').forEach(btn => {
+        btn.onclick = () => viewUserContacts(btn.dataset.uid, btn.dataset.email);
+      });
+      tbody.querySelectorAll('.btn-impersonate').forEach(btn => {
+        btn.onclick = () => impersonateUser(btn.dataset.uid, btn.dataset.email);
+      });
+      tbody.querySelectorAll('.btn-toggle-ban').forEach(btn => {
+        btn.onclick = () => toggleBanUser(btn.dataset.uid);
+      });
+      tbody.querySelectorAll('.btn-delete-user').forEach(btn => {
+        btn.onclick = () => deleteUser(btn.dataset.uid);
+      });
+    }
+
+    function escapeHtml(text) {
+      return String(text).replace(/[&<>"]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[m]);
+    }
+
+    // ========== ACTIONS ==========
+    async function viewUserContacts(uid, email) {
+      $('#contacts-modal-title').textContent = `${email} - কন্টাক্ট`;
+      const content = $('#contacts-modal-content');
+      content.innerHTML = '<p class="text-center text-slate-400 py-10">লোড হচ্ছে...</p>';
+      $('#contacts-modal').classList.remove('hidden');
+
+      const contactsSnap = await getDocs(collection(db, 'users', uid, 'contacts'));
+      if (contactsSnap.empty) {
+        content.innerHTML = '<p class="text-center text-red-400 py-10">কোন কন্টাক্ট নেই</p>';
+        return;
+      }
+      content.innerHTML = contactsSnap.docs.map(doc => {
+        const d = doc.data();
+        const tags = (d.tags || []).map(t => `<span class="tag">${escapeHtml(t)}</span>`).join('');
+        return `
+          <div class="glass-card p-3 rounded-xl flex flex-wrap justify-between items-center gap-2">
+            <div>
+              <p class="font-semibold text-white">${escapeHtml(d.name)}</p>
+              <p class="text-xs text-slate-400">📞 ${escapeHtml(d.phone)} ${d.profession ? '· '+escapeHtml(d.profession) : ''}</p>
+              <p class="text-[10px] text-slate-500">${d.category||''} ${d.section?'› '+d.section:''}</p>
+              <div class="mt-1">${tags}</div>
+            </div>
+          </div>`;
+      }).join('');
+    }
+
+    function impersonateUser(uid, email) {
+      // Store admin session & redirect to user dashboard with impersonation flag
+      sessionStorage.setItem('impersonate_uid', uid);
+      sessionStorage.setItem('impersonate_email', email);
+      window.location.href = 'index.html?impersonate=true';
+    }
+
+    async function toggleBanUser(uid) {
+      const user = AppState.allUsers.find(u => u.id === uid);
+      if (!user) return;
+      const newBanned = !user.banned;
+      if (!confirm(`${newBanned ? 'ব্যান' : 'আনব্যান'} করতে চান "${user.email}"?`)) return;
+
+      await updateDoc(doc(db, 'users', uid), {
+        banned: newBanned,
+        updatedAt: serverTimestamp()
+      });
+      // refresh
+      loadDashboardData();
+    }
+
+    async function deleteUser(uid) {
+      const user = AppState.allUsers.find(u => u.id === uid);
+      if (!user) return;
+      if (!confirm(`সম্পূর্ণ ডেটাসহ "${user.email}" ডিলিট করতে চান? এটা অপরিবর্তনীয়!`)) return;
+
+      // Delete all contacts subcollection
+      const contactsSnap = await getDocs(collection(db, 'users', uid, 'contacts'));
+      const batch = writeBatch(db);
+      contactsSnap.docs.forEach(docSnap => batch.delete(docSnap.ref));
+      batch.delete(doc(db, 'users', uid));
+      await batch.commit();
+
+      loadDashboardData();
+    }
+
+    // ========== AUTH STATE ==========
+    onAuthStateChanged(auth, (user) => {
+      if (user && user.uid === ADMIN_UID) {
+        AppState.user = user;
+        renderApp();
+      } else if (user) {
+        alert('আপনার অ্যাক্সেস নেই। শুধু অ্যাডমিন ঢুকতে পারবেন।');
+        signOut(auth);
+      } else {
+        AppState.user = null;
+        renderApp();
+      }
+    });
+
+    renderApp();
   </script>
 </body>
 </html>
